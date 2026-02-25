@@ -68,6 +68,8 @@ namespace UtilsStuff
 
     public static class ValueExtensions
     {
+        #region NUMERICS
+
         // Per nullable: gestisce null o default(T)
         public static bool IsNullOrDefault<T>(this T? value) where T : struct
         {
@@ -79,6 +81,10 @@ namespace UtilsStuff
         {
             return value.Equals(default(T));
         }
+
+        #endregion
+
+        #region TIMESPAN
 
         public static string ToCompactString(this TimeSpan ts)
         {
@@ -100,6 +106,10 @@ namespace UtilsStuff
             return parts.Count > 0 ? string.Join(" ", parts) : "0";
         }
 
+        #endregion
+
+        #region DATETIME
+
         public static int? YearsTillNow(this DateTime? dataNascita) => dataNascita == null ? null : ((DateTime)dataNascita).YearsTillNow();
         public static int YearsTillNow(this DateTime dataNascita)
         {
@@ -113,6 +123,9 @@ namespace UtilsStuff
             return eta;
         }
 
+        #endregion
+
+        #region CLASS/GENERICS
 
         /// <summary>
         /// Given a specific <ENTITY> to a method of a class, it will be created a new <ENTITY>() and the property of <ENTITY> matching the one of the class
@@ -150,7 +163,7 @@ namespace UtilsStuff
 
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        public static T DeepCopy<T>(this T original)
+        public static T DeepCopy<T>(this T original) where T : class
         {
             if (original == null!) return default(T) ?? default!;
 
@@ -169,6 +182,8 @@ namespace UtilsStuff
 
             return copy;
         }
+
+        #endregion
     }
 
 

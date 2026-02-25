@@ -63,6 +63,86 @@ namespace UtilsStuff
 
         #endregion
 
+        #region DEBOUNCER
+
+        public class Debouncer : IDisposable
+        {
+            private readonly TimeSpan _delay;
+            private Timer? _timer;
+            private Action? _pendingAction;
+            private readonly Lock _lock = new();
+            private bool _disposed = false;
+
+            public Debouncer(TimeSpan delay)
+            {
+                _delay = delay;
+            }
+
+            public void Debounce(Action action)
+            {
+                lock (_lock)
+                {
+                    ObjectDisposedException.ThrowIf(_disposed, nameof(Debouncer));
+
+                    _pendingAction = action;
+                    _timer?.Dispose();  // Cancella precedente
+                    _timer = new Timer(OnTimerElapsed, null, _delay, Timeout.InfiniteTimeSpan);
+                }
+            }
+
+            public async Task DebounceAsync(Func<Task> asyncAction)
+            {
+                Timer? oldTimer;
+                lock (_lock)
+                {
+                    ObjectDisposedException.ThrowIf(_disposed, nameof(Debouncer));
+
+                    _pendingAction = () => _ = Task.Run(asyncAction);  // Wrapper sync
+                    oldTimer = _timer;
+                    _timer = new Timer(OnTimerElapsed, null, _delay, Timeout.InfiniteTimeSpan);
+                }
+
+                if (oldTimer != null) await oldTimer.DisposeAsync();
+            }
+
+            private void OnTimerElapsed(object? _)
+            {
+                Action? action;
+                lock (_lock)
+                {
+                    action = _pendingAction;
+                    _pendingAction = null;
+                }
+                action?.Invoke();  // Fuori lock, evita deadlock
+            }
+
+            public void Dispose()
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!_disposed)
+                {
+                    if (disposing)
+                    {
+                        lock (_lock)
+                        {
+                            _timer?.Dispose();
+                            _timer = null;
+                            _pendingAction = null;
+                        }
+                    }
+                    _disposed = true;
+                }
+            }
+
+            ~Debouncer() => Dispose(false);
+        }
+
+        #endregion
 
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
         public static T DeepCopy<T>(T original)

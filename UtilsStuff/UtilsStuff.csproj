@@ -4,6 +4,19 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
 
+	<PackageId>UtilsStuff</PackageId>
+	<Version>1.0.1</Version>
+	<Authors>Alessio Velluso</Authors>
+	<Description>Utility extensions per C# .NET: Debouncer, exceptions, enums</Description>
+	<PackageTags>utils;extensions;csharp;dotnet</PackageTags>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+	<RepositoryUrl>https://github.com/alessioVelluso/.NET_UtilsStuff</RepositoryUrl>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+  <ItemGroup>
+	<None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 </Project>

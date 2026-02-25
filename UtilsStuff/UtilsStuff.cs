@@ -44,19 +44,20 @@ namespace UtilsStuff
             /// </summary>
             private static string[] SplitFixedParts(string template)
             {
+                char[] charList = ['{', '}'];
+
                 // Regex: (parte fissa)({qualcosa}|fine)
                 var matches = Regex.Matches(template, @"([^}]*(?:\{[^}]+\}[^}]*)*)(?:\{[^}]+\}|$)");
                 var parts = new List<string>();
 
                 foreach (Match match in matches)
                 {
-                    // Estrai SOLO parte fissa (prima del { o fine)
-                    var fixedPart = match.Value.Split('{', '}')[0].TrimEnd();
-                    if (!string.IsNullOrEmpty(fixedPart))
-                        parts.Add(fixedPart);
+                    var fixedPart = match.Value.Split(charList)[0].TrimEnd();
+                    if (!string.IsNullOrEmpty(fixedPart)) parts.Add(fixedPart);
                 }
 
-                return parts.ToArray();
+
+                return [.. parts];
             }
         }
 
@@ -87,7 +88,7 @@ namespace UtilsStuff
 
         public static void UnwapEntity<OriginalEntity>(OriginalEntity entity, object self)
         {
-            List<string> destinationPropsNames = self.GetType().GetProperties().Select(x => x.Name).ToList();
+            List<string> destinationPropsNames = [.. self.GetType().GetProperties().Select(x => x.Name)];
 
             foreach (var prop in typeof(OriginalEntity).GetProperties())
             {
@@ -100,7 +101,7 @@ namespace UtilsStuff
         {
             var baseEntity = new OriginalEntity();
 
-            List<string> sourcePropsNames = typeof(OriginalEntity).GetProperties().Select(x => x.Name).ToList();
+            List<string> sourcePropsNames = [.. typeof(OriginalEntity).GetProperties().Select(x => x.Name)];
 
             foreach (var prop in self.GetType().GetProperties())
             {
@@ -110,9 +111,39 @@ namespace UtilsStuff
 
             return baseEntity;
         }
+
+
+
+
+        public static string GetAge(DateTime? dataNascita)
+        {
+            if (dataNascita == null) return "";
+            DateTime dataOggi = DateTime.Now;
+            int eta = dataOggi.Year - ((DateTime)dataNascita).Year;
+            if (dataOggi.Month < ((DateTime)dataNascita).Month || (dataOggi.Month == ((DateTime)dataNascita).Month && dataOggi.Day < ((DateTime)dataNascita).Day))
+            {
+                eta--;
+            }
+
+            return eta.ToString();
+        }
     }
 
 
-    
+
+    public static class ValueExtensions
+    {
+        // Per nullable: gestisce null o default(T)
+        public static bool IsNullOrDefault<T>(this T? value) where T : struct
+        {
+            return !value.HasValue || value.Value.Equals(default(T));
+        }
+
+        // Per value types: solo == default(T)
+        public static bool IsDefault<T>(this T value) where T : struct
+        {
+            return value.Equals(default(T));
+        }
+    }
 
 }

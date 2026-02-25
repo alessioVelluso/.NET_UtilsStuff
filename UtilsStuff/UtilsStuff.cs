@@ -1,0 +1,118 @@
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Text.RegularExpressions;
+
+namespace UtilsStuff
+{
+    public static class UtilsStuff
+    {
+        #region EXC
+
+        private static Func<string, string>? EXC_LocalizerFunction { get; set; } = null;
+        public static void SetExcLocalizerFunction(Func<string, string> callbackFunction) => EXC_LocalizerFunction = callbackFunction;
+        public class UtilsException(string template, int? status = null, params object?[] args) : Exception(Build(template, EXC_LocalizerFunction, args))
+        {
+            public int? Status { get; private set; } = status;
+            public string RealMessage { get { return this.InnerException?.Message ?? this.Message; } }
+
+
+            private static string Build(string template, Func<string, string>? localizer, object?[] args)
+            {
+                // SPLIT: separa SOLO parti fisse da variabili {0}, {name}, ecc.
+                var fixedParts = SplitFixedParts(template);
+
+                // LOCALIZZA: applica callback SOLO alle parti fisse
+                if (localizer != null)
+                {
+                    for (int i = 0; i < fixedParts.Length; i++)
+                    {
+                        fixedParts[i] = localizer(fixedParts[i]);
+                    }
+                }
+
+                // RCOMPONI template localizzato
+                var localizedTemplate = string.Join("", fixedParts);
+
+                // FORMAT con variabili
+                return string.Format(localizedTemplate, args);
+            }
+
+
+            /// <summary>
+            /// SPLIT template in PARTI FISSE escludendo {variabili}
+            /// "Ciao sono {name} ed ho {age} anni" → ["Ciao sono ", " ed ho ", " anni"]
+            /// </summary>
+            private static string[] SplitFixedParts(string template)
+            {
+                // Regex: (parte fissa)({qualcosa}|fine)
+                var matches = Regex.Matches(template, @"([^}]*(?:\{[^}]+\}[^}]*)*)(?:\{[^}]+\}|$)");
+                var parts = new List<string>();
+
+                foreach (Match match in matches)
+                {
+                    // Estrai SOLO parte fissa (prima del { o fine)
+                    var fixedPart = match.Value.Split('{', '}')[0].TrimEnd();
+                    if (!string.IsNullOrEmpty(fixedPart))
+                        parts.Add(fixedPart);
+                }
+
+                return parts.ToArray();
+            }
+        }
+
+        #endregion
+
+
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        public static T DeepCopy<T>(T original)
+        {
+            if (original == null!) return default(T) ?? default!;
+
+            var type = original.GetType();
+            if (type.IsValueType || type == typeof(string)) return original;
+
+
+            #pragma warning disable S3011 // Reflection sicura per deep copy interni
+            var copy = (T?)Activator.CreateInstance(type) ?? throw new Exception("Original Instance Not Found")!;
+            foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
+            {
+                var fieldValue = field.GetValue(original);
+                field.SetValue(copy, fieldValue);
+            }
+            #pragma warning restore S3011
+
+            return copy;
+        }
+
+
+        public static void UnwapEntity<OriginalEntity>(OriginalEntity entity, object self)
+        {
+            List<string> destinationPropsNames = self.GetType().GetProperties().Select(x => x.Name).ToList();
+
+            foreach (var prop in typeof(OriginalEntity).GetProperties())
+            {
+                bool isValid = destinationPropsNames.Contains(prop.Name) && prop.CanRead && prop.CanWrite;
+                if (isValid) prop.SetValue(self, prop.GetValue(entity));
+            }
+        }
+
+        public static OriginalEntity WrapEntity<OriginalEntity>(object self) where OriginalEntity : class, new()
+        {
+            var baseEntity = new OriginalEntity();
+
+            List<string> sourcePropsNames = typeof(OriginalEntity).GetProperties().Select(x => x.Name).ToList();
+
+            foreach (var prop in self.GetType().GetProperties())
+            {
+                bool isValid = sourcePropsNames.Contains(prop.Name) && prop.CanRead && prop.CanWrite;
+                if (isValid) prop.SetValue(baseEntity, prop.GetValue(self));
+            }
+
+            return baseEntity;
+        }
+    }
+
+
+    
+
+}

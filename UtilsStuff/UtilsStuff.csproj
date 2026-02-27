@@ -7,7 +7,7 @@
 	<PackageReadmeFile>README.md</PackageReadmeFile>
 
 	<PackageId>UtilsStuff</PackageId>
-	<Version>1.0.2</Version>
+	<Version>1.0.3</Version>
 	<Authors>Alessio Velluso</Authors>
 	<Description>Utility extensions per C# .NET: Debouncer, exceptions, enums</Description>
 	<PackageTags>utils;extensions;csharp;dotnet</PackageTags>

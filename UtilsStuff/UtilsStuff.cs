@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -71,15 +72,25 @@ namespace UtilsStuff
         #region NUMERICS
 
         // Per nullable: gestisce null o default(T)
-        public static bool IsNullOrDefault<T>(this T? value) where T : struct
+        public static bool IsNullOrDefault<T>(this T? value) where T : struct, INumber<T>
         {
-            return !value.HasValue || value.Value.Equals(default(T));
+            return value == null || value == T.Zero;
         }
 
         // Per value types: solo == default(T)
-        public static bool IsDefault<T>(this T value) where T : struct
+        public static bool IsDefault<T>(this T value) where T : struct, INumber<T>
         {
-            return value.Equals(default(T));
+            return value == T.Zero;
+        }
+
+        public static int CompareTo<T, U>(this T value, U other)
+            where T : INumber<T>
+            where U : INumber<U>
+        {
+            var a = Convert.ToDecimal(value);
+            var b = Convert.ToDecimal(other);
+
+            return a.CompareTo(b);
         }
 
         #endregion
@@ -126,6 +137,22 @@ namespace UtilsStuff
         #endregion
 
         #region CLASS/GENERICS
+
+        public static object? GetNestedPropertyValue(this object? obj, string propertyPath)
+        {
+            if (obj == null) return null;
+
+            foreach (string part in propertyPath.Split('.'))
+            {
+                var propertyInfo = obj.GetType().GetProperty(part);
+                if (propertyInfo == null) return null;
+
+                obj = propertyInfo.GetValue(obj);
+                if (obj == null) return null;
+            }
+
+            return obj;
+        }
 
         /// <summary>
         /// Given a specific <ENTITY> to a method of a class, it will be created a new <ENTITY>() and the property of <ENTITY> matching the one of the class

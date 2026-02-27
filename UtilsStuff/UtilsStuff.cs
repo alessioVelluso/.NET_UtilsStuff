@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -208,6 +209,19 @@ namespace UtilsStuff
 #pragma warning restore S3011
 
             return copy;
+        }
+
+        #endregion
+
+
+        #region ENUMS
+
+        public static string GetDescription<T>(this T? value) where T : Enum
+        {
+            if (value is null) return string.Empty;
+
+            var field = typeof(T).GetField(value.ToString());
+            return field?.GetCustomAttribute<DescriptionAttribute>()?.Description ?? value.ToString();
         }
 
         #endregion
